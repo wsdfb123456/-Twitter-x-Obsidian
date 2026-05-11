@@ -2,16 +2,6 @@
 
 打开chrome浏览器并且登录Twitter/x后，可一键获取推文和下载相关图片到本地Obsidian里。
 
-```markdown
-# Claude X Saver 使用教程
-
-本教程将指导你一步一步搭建 `claude-x-saver` 项目，用于保存 Claude 对话内容（或你定义的其他用途）。
-
-## 准备工作
-
-- 一台 Windows 电脑（本教程以 `C:\claude-x-saver` 为例）
-- 已安装 [Node.js](https://nodejs.org/)（建议 LTS 版本）
-- 基本的命令行操作能力
 
 ## 第一步：重新创建项目
 
