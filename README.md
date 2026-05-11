@@ -73,11 +73,11 @@ const path = require('path');
 
 // Markdown保存目录，请设置在one drive同步文件夹里，先自己去创建对应的文件夹
 const OBSIDIAN_PATH =
-    "C:/Users/xxxxxxxxxxxxxxxxx改成你自己的用户名/OneDrive/Apps/remotely-save/Obsidian Vault";
+    "C:/Users/xxxx改成你自己的用户名/OneDrive/Apps/remotely-save/Obsidian Vault";
 
 // 图片保存目录
 const IMAGE_PATH =
-    "C:/Users/xxxxxxxxxxxxxxxxx改成你自己的用户名/OneDrive/Apps/remotely-save/Obsidian Vault/assets/twitter";
+    "C:/Users/xxxx改成你自己的用户名/OneDrive/Apps/remotely-save/Obsidian Vault/assets/twitter";
 
 // Chrome配置目录
 const USER_DATA_DIR =
@@ -426,9 +426,12 @@ async function main() {
 }
 
 main();
+```
 
 先打开chrome浏览器登录Twitter/x，然后关闭浏览器。
 在C:\claude-x-saver目录下运行
 
+
 ```cmd
 node save-x.js "https://x.com/............/"
+```
