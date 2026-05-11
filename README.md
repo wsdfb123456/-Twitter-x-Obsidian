@@ -1,4 +1,3 @@
-```markdown
 # 批量获取 Twitter/X 推文图片到 Obsidian，并同步至 OneDrive
 
 本方案可以实现：**只要有 Twitter/X 链接**，就能批量抓取图文内容，自动保存到 Obsidian 笔记中，并利用 OneDrive 在多端同步。
@@ -51,6 +50,7 @@ C:\Users\你的用户名\OneDrive\Apps\remotely-save\Obsidian Vault
 - OneDrive 同步可能需要较长时间（取决于网络和文件大小）
 - 建议定期检查 `Remotely Save` 插件的同步状态
 
+## 重点操作（电脑端）
 
 ## 第一步：重新创建项目
 
