@@ -84,32 +84,36 @@ C:\claude-x-saver\data
 mkdir data
 ```
 
-## 第五步：创建 `save-x.js` 文件
+## 第五步：创建 `推文链接.txt` 文件
+
+把Twitter/x链接填到里面，每行一个链接。
+
+
+## 第六步：创建 `save-x.js` 文件
 
 在 `C:\claude-x-saver` 目录下新建一个文件，命名为 `save-x.js`（注意大小写和扩展名）。
 
 然后将下面的完整代码**完整复制**到该文件中：
 
-```javascript
 const { chromium } = require('playwright');
 const fs = require('fs-extra');
 const path = require('path');
 
 // ======================
-// 配置区域
+// 配置
 // ======================
 
-// Markdown保存目录，请设置在one drive同步文件夹里，先自己去创建对应的文件夹
 const OBSIDIAN_PATH =
-    "C:/Users/xxxx改成你自己的用户名/OneDrive/Apps/remotely-save/Obsidian Vault";
+    "C:/Users/Yu183/OneDrive/Apps/remotely-save/Obsidian Vault";
 
-// 图片保存目录
 const IMAGE_PATH =
-    "C:/Users/xxxx改成你自己的用户名/OneDrive/Apps/remotely-save/Obsidian Vault/assets/twitter";
+     "C:/Users/Yu183/OneDrive/Apps/remotely-save/Obsidian Vault/assets/twitter";
 
-// Chrome配置目录
 const USER_DATA_DIR =
     "C:/chrome-x-profile";
+
+const LINKS_FILE =
+    "推文链接.txt";
 
 // ======================
 // 时间文件名
@@ -145,18 +149,16 @@ function getTimeFilename() {
 }
 
 // ======================
-// 转高清原图URL
+// 高清图
 // ======================
 
 function getOriginalImageUrl(url) {
 
-    // 删除旧name参数
     url = url.replace(
         /name=\w+/,
         'name=orig'
     );
 
-    // 如果没有name参数
     if (!url.includes('name=')) {
 
         if (url.includes('?')) {
@@ -179,25 +181,28 @@ async function downloadImage(
     savePath
 ) {
 
-    const buffer = await page.evaluate(
-        async (url) => {
+    const buffer =
+        await page.evaluate(
+            async (url) => {
 
-            const response =
-                await fetch(url);
+                const response =
+                    await fetch(url);
 
-            const blob =
-                await response.blob();
+                const blob =
+                    await response.blob();
 
-            const arrayBuffer =
-                await blob.arrayBuffer();
+                const arrayBuffer =
+                    await blob.arrayBuffer();
 
-            return Array.from(
-                new Uint8Array(arrayBuffer)
-            );
+                return Array.from(
+                    new Uint8Array(
+                        arrayBuffer
+                    )
+                );
 
-        },
-        url
-    );
+            },
+            url
+        );
 
     await fs.writeFile(
         savePath,
@@ -206,21 +211,238 @@ async function downloadImage(
 }
 
 // ======================
+// 处理单个推文
+// ======================
+
+async function processTweet(
+    page,
+    url
+) {
+
+    console.log("");
+    console.log("=====================");
+    console.log(`处理链接:`);
+    console.log(url);
+    console.log("=====================");
+    console.log("");
+
+    try {
+
+        await page.goto(url, {
+            waitUntil: 'domcontentloaded',
+            timeout: 60000
+        });
+
+        await page.waitForTimeout(6000);
+
+        await page.waitForSelector(
+            'article',
+            {
+                timeout: 30000
+            }
+        );
+
+        const data =
+            await page.evaluate(() => {
+
+                const article =
+                    document.querySelector(
+                        'article'
+                    );
+
+                if (!article) {
+                    return null;
+                }
+
+                const text =
+                    article.innerText;
+
+                const images =
+                    Array.from(
+                        article.querySelectorAll(
+                            'img'
+                        )
+                    )
+                    .map(img => img.src)
+                    .filter(src =>
+                        src.includes(
+                            'pbs.twimg.com/media'
+                        )
+                    );
+
+                return {
+                    text,
+                    images
+                };
+            });
+
+        if (!data) {
+
+            console.log(
+                "未找到推文"
+            );
+
+            return;
+        }
+
+        const filename =
+            getTimeFilename();
+
+        let md = '';
+
+        md += `# Twitter收藏\n\n`;
+
+        md += `原链接：${url}\n\n`;
+
+        md += `保存时间：${new Date().toLocaleString()}\n\n`;
+
+        md += `---\n\n`;
+
+        md += `${data.text}\n\n`;
+
+        // 下载图片
+        if (
+            data.images.length > 0
+        ) {
+
+            md += `## 图片\n\n`;
+
+            for (
+                let i = 0;
+                i < data.images.length;
+                i++
+            ) {
+
+                let imgUrl =
+                    data.images[i];
+
+                imgUrl =
+                    getOriginalImageUrl(
+                        imgUrl
+                    );
+
+                let ext = 'jpg';
+
+                if (
+                    imgUrl.includes(
+                        'format=png'
+                    )
+                ) {
+                    ext = 'png';
+                }
+
+                if (
+                    imgUrl.includes(
+                        'format=webp'
+                    )
+                ) {
+                    ext = 'webp';
+                }
+
+                const imgName =
+                    `${filename}-${i + 1}.${ext}`;
+
+                const imgPath =
+                    path.join(
+                        IMAGE_PATH,
+                        imgName
+                    );
+
+                console.log(
+                    `下载图片 ${i + 1}`
+                );
+
+                try {
+
+                    await downloadImage(
+                        page,
+                        imgUrl,
+                        imgPath
+                    );
+
+                    const stat =
+                        await fs.stat(
+                            imgPath
+                        );
+
+                    console.log(
+                        `图片大小 ${
+                            Math.round(
+                                stat.size / 1024
+                            )
+                        }KB`
+                    );
+
+                    md +=
+                        `![[${imgName}]]\n\n`;
+
+                } catch (err) {
+
+                    console.log(
+                        "图片下载失败"
+                    );
+                }
+            }
+        }
+
+        const mdPath =
+            path.join(
+                OBSIDIAN_PATH,
+                `${filename}.md`
+            );
+
+        await fs.writeFile(
+            mdPath,
+            md,
+            'utf-8'
+        );
+
+        console.log("");
+        console.log("保存成功:");
+        console.log(mdPath);
+
+    } catch (err) {
+
+        console.log("");
+        console.log("处理失败:");
+        console.log(url);
+
+        console.log(err);
+    }
+}
+
+// ======================
 // 主程序
 // ======================
 
 async function main() {
 
-    const url = process.argv[2];
+    await fs.ensureDir(
+        OBSIDIAN_PATH
+    );
 
-    if (!url) {
+    await fs.ensureDir(
+        IMAGE_PATH
+    );
 
-        console.log("请提供Twitter/X链接");
+    // 读取links.txt
+    const text =
+        await fs.readFile(
+            LINKS_FILE,
+            'utf-8'
+        );
 
-        return;
-    }
+    const links =
+        text
+            .split('\n')
+            .map(v => v.trim())
+            .filter(v => v);
 
-    console.log("启动Chrome...");
+    console.log("");
+    console.log(
+        `读取到 ${links.length} 个链接`
+    );
+    console.log("");
 
     const browser =
         await chromium.launchPersistentContext(
@@ -239,218 +461,27 @@ async function main() {
     const page =
         await browser.newPage();
 
-    console.log("打开页面...");
+    // 循环处理
+    for (const url of links) {
 
-    await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: 60000
-    });
-
-    console.log("等待页面加载...");
-
-    await page.waitForTimeout(8000);
-
-    // 登录检测
-    if (
-        page.url().includes('login')
-    ) {
-
-        console.log("");
-        console.log("请先手动登录 X/Twitter");
-        console.log("");
-
-        await page.waitForTimeout(15000);
-    }
-
-    console.log("等待推文加载...");
-
-    await page.waitForSelector(
-        'article',
-        {
-            timeout: 30000
-        }
-    );
-
-    console.log("提取推文...");
-
-    const data =
-        await page.evaluate(() => {
-
-            const article =
-                document.querySelector('article');
-
-            if (!article) {
-                return null;
-            }
-
-            const text =
-                article.innerText;
-
-            const images =
-                Array.from(
-                    article.querySelectorAll('img')
-                )
-                .map(img => img.src)
-                .filter(src =>
-                    src.includes(
-                        'pbs.twimg.com/media'
-                    )
-                );
-
-            return {
-                text,
-                images
-            };
-        });
-
-    if (!data) {
-
-        console.log("未找到推文");
-
-        return;
-    }
-
-    // 创建目录
-    await fs.ensureDir(
-        OBSIDIAN_PATH
-    );
-
-    await fs.ensureDir(
-        IMAGE_PATH
-    );
-
-    // 文件名
-    const filename =
-        getTimeFilename();
-
-    // Markdown
-    let md = '';
-
-    md += `# Twitter收藏\n\n`;
-
-    md += `原链接：${url}\n\n`;
-
-    md += `保存时间：${new Date().toLocaleString()}\n\n`;
-
-    md += `---\n\n`;
-
-    md += `${data.text}\n\n`;
-
-    // ======================
-    // 下载高清图片
-    // ======================
-
-    if (data.images.length > 0) {
-
-        md += `## 图片\n\n`;
-
-        for (
-            let i = 0;
-            i < data.images.length;
-            i++
-        ) {
-
-            let imgUrl =
-                data.images[i];
-
-            // 转高清原图
-            imgUrl =
-                getOriginalImageUrl(
-                    imgUrl
-                );
-
-            console.log("");
-            console.log(
-                `高清图片URL:`
-            );
-
-            console.log(imgUrl);
-
-            let ext = 'jpg';
-
-            if (
-                imgUrl.includes(
-                    'format=png'
-                )
-            ) {
-                ext = 'png';
-            }
-
-            if (
-                imgUrl.includes(
-                    'format=webp'
-                )
-            ) {
-                ext = 'webp';
-            }
-
-            const imgName =
-                `${filename}-${i + 1}.${ext}`;
-
-            const imgPath =
-                path.join(
-                    IMAGE_PATH,
-                    imgName
-                );
-
-            console.log(
-                `下载高清图片 ${i + 1}`
-            );
-
-            try {
-
-                await downloadImage(
-                    page,
-                    imgUrl,
-                    imgPath
-                );
-
-                const stat =
-                    await fs.stat(
-                        imgPath
-                    );
-
-                console.log(
-                    `图片大小: ${
-                        Math.round(
-                            stat.size / 1024
-                        )
-                    }KB`
-                );
-
-                md += `![[${imgName}]]\n\n`;
-
-            } catch (err) {
-
-                console.log(
-                    "图片下载失败"
-                );
-
-                console.log(err);
-            }
-        }
-    }
-
-    // 保存Markdown
-    const mdPath =
-        path.join(
-            OBSIDIAN_PATH,
-            `${filename}.md`
+        await processTweet(
+            page,
+            url
         );
 
-    await fs.writeFile(
-        mdPath,
-        md,
-        'utf-8'
-    );
+        // 防止风控
+        await page.waitForTimeout(
+            3000
+        );
+    }
 
     console.log("");
-    console.log("=================================");
-    console.log("保存完成");
-    console.log(mdPath);
-    console.log("=================================");
+    console.log("=====================");
+    console.log("全部处理完成");
+    console.log("=====================");
     console.log("");
 
+    await browser.close();
 }
 
 main();
