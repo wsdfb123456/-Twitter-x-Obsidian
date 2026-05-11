@@ -1,7 +1,55 @@
-# -Twitter-x-Obsidian
+```markdown
+# 批量获取 Twitter/X 推文图片到 Obsidian，并同步至 OneDrive
 
-打开chrome浏览器并且登录Twitter/x后，可一键获取推文和下载相关图片到本地Obsidian里。
-利用了one drive同步功能。
+本方案可以实现：**只要有 Twitter/X 链接**，就能批量抓取图文内容，自动保存到 Obsidian 笔记中，并利用 OneDrive 在多端同步。
+
+## 准备工作
+
+### 1. 设置 OneDrive 与 Obsidian 目录（电脑端）
+
+在 OneDrive 中创建或指定一个用于存放 Obsidian 库的文件夹，例如：
+
+```plaintext
+C:\Users\你的用户名\OneDrive\Apps\remotely-save\Obsidian Vault
+```
+
+### 2. 安装并配置 Obsidian 插件 `Remotely Save`（电脑端）
+
+- 打开 Obsidian，搜索并安装插件 **Remotely Save**  
+- 进入插件设置：
+  - **服务类型** → 选择 `OneDrive 个人版`
+  - 点击 **登录** 并授权你的 OneDrive 账号
+  - **同步文件夹** → 填写刚刚设置的文件夹路径（如 `Obsidian Vault`）
+
+### 3. 手机端配置（安卓 / iOS）
+
+- 下载安装 Obsidian 移动端
+- 同样安装 **Remotely Save** 插件
+- 授权登录同一个 OneDrive 账号
+- 创建**同名**的 Obsidian 库文件夹（例如 `Obsidian Vault`）
+
+> ✅ 此时电脑与手机可以通过 OneDrive 自动同步该库中的内容。
+
+## 核心操作（电脑端）
+
+> 注：具体批量抓取 Twitter/X 推文图片的流程（例如使用爬虫、浏览器插件或自动化脚本）可根据你的实际工具补充。此处保留原有的“电脑端操作”入口，你可以继续在下方添加具体步骤。
+
+```bash
+# 示例：假设你有一个 Python 脚本或工具来处理推文链接
+# 将获取到的图片和文字保存到上面设置的 Obsidian 库路径下
+```
+
+## 效果总结
+
+- 只要有 Twitter/X 链接，即可**批量抓取图片+文字**
+- 自动存入本地 Obsidian 库（通过 OneDrive 同步）
+- 手机端随时查看和编辑
+
+## 注意事项
+
+- 请遵守 Twitter/X 的服务条款，合理使用抓取工具
+- OneDrive 同步可能需要较长时间（取决于网络和文件大小）
+- 建议定期检查 `Remotely Save` 插件的同步状态
 
 
 ## 第一步：重新创建项目
