@@ -93,7 +93,7 @@ mkdir data
 
 在 `C:\claude-x-saver` 目录下新建一个文件，命名为 `save-x.js`（注意大小写和扩展名）。
 
-然后将下面的完整代码**完整复制**到该文件中：
+然后将下面的完整代码**完整复制**到该文件中：（记得更改“你的用户名”）
 
 ```
 const { chromium } = require('playwright');
