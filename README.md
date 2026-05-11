@@ -95,6 +95,7 @@ mkdir data
 
 然后将下面的完整代码**完整复制**到该文件中：
 
+```
 const { chromium } = require('playwright');
 const fs = require('fs-extra');
 const path = require('path');
@@ -492,5 +493,5 @@ main();
 
 
 ```cmd
-node save-x.js "https://x.com/............/"
+node save-x.js
 ```
