@@ -105,10 +105,10 @@ const path = require('path');
 // ======================
 
 const OBSIDIAN_PATH =
-    "C:/Users/Yu183/OneDrive/Apps/remotely-save/Obsidian Vault";
+    "C:/Users/你的用户名/OneDrive/Apps/remotely-save/Obsidian Vault";
 
 const IMAGE_PATH =
-     "C:/Users/Yu183/OneDrive/Apps/remotely-save/Obsidian Vault/assets/twitter";
+     "C:/Users/你的用户名/OneDrive/Apps/remotely-save/Obsidian Vault/assets/twitter";
 
 const USER_DATA_DIR =
     "C:/chrome-x-profile";
