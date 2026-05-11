@@ -1,6 +1,7 @@
 # -Twitter-x-Obsidian
 
 打开chrome浏览器并且登录Twitter/x后，可一键获取推文和下载相关图片到本地Obsidian里。
+利用了one drive同步功能。
 
 
 ## 第一步：重新创建项目
@@ -70,13 +71,13 @@ const path = require('path');
 // 配置区域
 // ======================
 
-// Markdown保存目录
+// Markdown保存目录，请设置在one drive同步文件夹里，先自己去创建对应的文件夹
 const OBSIDIAN_PATH =
-    "C:/Users/Yu183/OneDrive/Apps/remotely-save/Obsidian Vault";
+    "C:/Users/xxxxxxxxxxxxxxxxx改成你自己的用户名/OneDrive/Apps/remotely-save/Obsidian Vault";
 
 // 图片保存目录
 const IMAGE_PATH =
-    "C:/Users/Yu183/OneDrive/Apps/remotely-save/Obsidian Vault/assets/twitter";
+    "C:/Users/xxxxxxxxxxxxxxxxx改成你自己的用户名/OneDrive/Apps/remotely-save/Obsidian Vault/assets/twitter";
 
 // Chrome配置目录
 const USER_DATA_DIR =
@@ -425,3 +426,9 @@ async function main() {
 }
 
 main();
+
+先打开chrome浏览器登录Twitter/x，然后关闭浏览器。
+在C:\claude-x-saver目录下运行
+
+```cmd
+node save-x.js "https://x.com/............/"
