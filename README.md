@@ -101,18 +101,22 @@ const fs = require('fs-extra');
 const path = require('path');
 
 // ======================
-// 配置
+// 配置区域
 // ======================
 
+// Markdown保存目录
 const OBSIDIAN_PATH =
     "C:/Users/你的用户名/OneDrive/Apps/remotely-save/Obsidian Vault";
 
+// 图片保存目录
 const IMAGE_PATH =
-     "C:/Users/你的用户名/OneDrive/Apps/remotely-save/Obsidian Vault/assets/twitter";
+    "C:/Users/你的用户名/OneDrive/Apps/remotely-save/Obsidian Vault/assets/twitter";
 
+// Chrome独立配置目录
 const USER_DATA_DIR =
     "C:/chrome-x-profile";
 
+// 批量链接文件
 const LINKS_FILE =
     "推文链接.txt";
 
@@ -150,7 +154,7 @@ function getTimeFilename() {
 }
 
 // ======================
-// 高清图
+// 转高清原图URL
 // ======================
 
 function getOriginalImageUrl(url) {
@@ -173,7 +177,7 @@ function getOriginalImageUrl(url) {
 }
 
 // ======================
-// 下载图片
+// 下载真实图片
 // ======================
 
 async function downloadImage(
@@ -222,7 +226,7 @@ async function processTweet(
 
     console.log("");
     console.log("=====================");
-    console.log(`处理链接:`);
+    console.log("处理推文:");
     console.log(url);
     console.log("=====================");
     console.log("");
@@ -234,7 +238,19 @@ async function processTweet(
             timeout: 60000
         });
 
-        await page.waitForTimeout(6000);
+        await page.waitForTimeout(8000);
+
+        // 登录检测
+        if (
+            page.url().includes('login')
+        ) {
+
+            console.log("");
+            console.log("请先手动登录 X/Twitter");
+            console.log("");
+
+            await page.waitForTimeout(15000);
+        }
 
         await page.waitForSelector(
             'article',
@@ -242,6 +258,8 @@ async function processTweet(
                 timeout: 30000
             }
         );
+
+        console.log("提取推文内容...");
 
         const data =
             await page.evaluate(() => {
@@ -255,21 +273,33 @@ async function processTweet(
                     return null;
                 }
 
+                // 正文
                 const text =
                     article.innerText;
 
+                // 图片 + alt
                 const images =
                     Array.from(
                         article.querySelectorAll(
                             'img'
                         )
                     )
-                    .map(img => img.src)
-                    .filter(src =>
-                        src.includes(
+                    .filter(img =>
+                        img.src.includes(
                             'pbs.twimg.com/media'
                         )
-                    );
+                    )
+                    .map(img => {
+
+                        return {
+
+                            url: img.src,
+
+                            alt: img.alt || ''
+
+                        };
+
+                    });
 
                 return {
                     text,
@@ -301,7 +331,10 @@ async function processTweet(
 
         md += `${data.text}\n\n`;
 
+        // ======================
         // 下载图片
+        // ======================
+
         if (
             data.images.length > 0
         ) {
@@ -314,13 +347,27 @@ async function processTweet(
                 i++
             ) {
 
-                let imgUrl =
+                const imageData =
                     data.images[i];
 
+                let imgUrl =
+                    imageData.url;
+
+                const alt =
+                    imageData.alt;
+
+                // 转原图
                 imgUrl =
                     getOriginalImageUrl(
                         imgUrl
                     );
+
+                console.log("");
+                console.log(
+                    `下载图片 ${i + 1}`
+                );
+
+                console.log(imgUrl);
 
                 let ext = 'jpg';
 
@@ -349,10 +396,6 @@ async function processTweet(
                         imgName
                     );
 
-                console.log(
-                    `下载图片 ${i + 1}`
-                );
-
                 try {
 
                     await downloadImage(
@@ -374,17 +417,35 @@ async function processTweet(
                         }KB`
                     );
 
-                    md +=
-                        `![[${imgName}]]\n\n`;
+                    // 写入Prompt
+                    if (alt) {
+
+                        md += `### 图片 ${i + 1} Prompt\n\n`;
+
+                        md += "```text\n";
+
+                        md += `${alt}\n`;
+
+                        md += "```\n\n";
+                    }
+
+                    // 本地图片
+                    md += `![[${imgName}]]\n\n`;
 
                 } catch (err) {
 
                     console.log(
                         "图片下载失败"
                     );
+
+                    console.log(err);
                 }
             }
         }
+
+        // ======================
+        // 保存Markdown
+        // ======================
 
         const mdPath =
             path.join(
@@ -399,14 +460,20 @@ async function processTweet(
         );
 
         console.log("");
-        console.log("保存成功:");
+        console.log("=====================");
+        console.log("保存成功");
         console.log(mdPath);
+        console.log("=====================");
+        console.log("");
 
     } catch (err) {
 
         console.log("");
-        console.log("处理失败:");
+        console.log("=====================");
+        console.log("处理失败");
         console.log(url);
+        console.log("=====================");
+        console.log("");
 
         console.log(err);
     }
@@ -426,7 +493,7 @@ async function main() {
         IMAGE_PATH
     );
 
-    // 读取links.txt
+    // 读取链接
     const text =
         await fs.readFile(
             LINKS_FILE,
@@ -445,6 +512,7 @@ async function main() {
     );
     console.log("");
 
+    // 启动浏览器
     const browser =
         await chromium.launchPersistentContext(
             USER_DATA_DIR,
@@ -462,7 +530,7 @@ async function main() {
     const page =
         await browser.newPage();
 
-    // 循环处理
+    // 批量处理
     for (const url of links) {
 
         await processTweet(
@@ -499,11 +567,44 @@ node save-x.js
 ## 最后打开Claude code，运行以下命令即可整理笔记：
 
 ```
-请你帮我整理Obsidian笔记的内容。要求1：把笔记里面的多余的无关紧要的文字删除，保留需要的内容，（日期、链接、网名等不能删除）；2：有英文内容的，在下面一段插入对应的中文翻译；3：重新整理排版内容，使得文字阅读性强，但是不能更改原文内容，特别是笔记里面提到的类似于“提示词”之类的绝对不能更改；4：把每个笔记的标题都改成能够体现对应笔记内容的标题。5：最后完成所有内容后，把文件名改成对应的内容的标题的名称。请你在这个Obsidian文件夹“C:\Users\你的用户名\OneDrive\Apps\remotely-save\Obsidian Vault”下完成工作，不要去其他文件夹。
+请你帮我整理Obsidian笔记的内容。
+要求一：把笔记里面的多余的无关紧要的文字删除，保留需要的内容，（日期、链接、网名等不能删除），只保留有实质信息的内容，删除所有冗余、重复、无意义或社交媒体的元数据。
+【保留规则】
+1. 保留有明确含义的中文或英文句子（如作者观点、方法说明、链接、标签、用户名、ID、提示词内容）。
+2. 保留格式类似“xxx: xxx”的键值对、列表项（如“GPT2: 自媒体封面 x 20个”）。
+3. 保留完整的网址、@用户名、话题标签。
+4. 如果数字是内容的一部分（例如提示词中的“20个”），则保留；若数字是孤立的点赞数、阅读数、时间戳，则删除。
+【删除规则】
+1. 删除所有连续重复的无意义单词，例如堆叠的“ALT”（只保留第一个有上下文的，或全部删除）。
+2. 删除孤立的数字（如“5”“18”“93”“8,979”），除非它们明显是参数或列表项的一部分。
+3. 删除时间戳（如“下午2:25 · 2026年5月6日”）、查看数、点赞/转发计数、平台按钮文字（如“查看”“相关”）。
+4. 删除广告或无关引导（如“想发布自己的文章？升级为 Premium”）。
+5. 删除无意义的单个字符、表情符号（除非有语义）、重复的分隔线。；
+要求二：有英文内容的，在下面一段插入对应的中文翻译；
+要求三：重新整理排版内容，使得文字阅读性强，但是不能更改原文内容，特别是笔记里面提到的类似于“提示词”之类的绝对不能更改；
+要求四：把每个笔记的标题都改成能够体现对应笔记内容的标题。
+要求五：最后完成所有内容后，把文件名改成对应的内容的标题的名称。请你在这个Obsidian文件夹“C:\Users\你的用户名\OneDrive\Apps\remotely-save\Obsidian Vault”下完成工作，不要去其他文件夹。
 ```
 
 ## 如果是只想修改新增笔记，不想动旧笔记，运行以下内容：
 
 ```
-请你帮我整理Obsidian笔记的内容。要求1：把笔记里面的多余的无关紧要的文字删除，保留需要的内容，（日期、链接、网名等不能删除）；2：有英文内容的，在下面一段插入对应的中文翻译；3：重新整理排版内容，使得文字阅读性强，但是不能更改原文内容，特别是笔记里面提到的类似于“提示词”之类的绝对不能更改；4：把每个笔记的标题都改成能够体现对应笔记内容的标题。5：最后完成所有内容后，把文件名改成对应的内容的标题的名称。请你在这个Obsidian文件夹“C:\Users\你的用户名\OneDrive\Apps\remotely-save\Obsidian Vault”下完成工作，不要去其他文件夹，并且只修改只有数字的.md文件，不要修改文件名含有中文的.md文件。
+请你帮我整理Obsidian笔记的内容。
+要求一：把笔记里面的多余的无关紧要的文字删除，保留需要的内容，（日期、链接、网名等不能删除），只保留有实质信息的内容，删除所有冗余、重复、无意义或社交媒体的元数据。
+【保留规则】
+1. 保留有明确含义的中文或英文句子（如作者观点、方法说明、链接、标签、用户名、ID、提示词内容）。
+2. 保留格式类似“xxx: xxx”的键值对、列表项（如“GPT2: 自媒体封面 x 20个”）。
+3. 保留完整的网址、@用户名、话题标签。
+4. 如果数字是内容的一部分（例如提示词中的“20个”），则保留；若数字是孤立的点赞数、阅读数、时间戳，则删除。
+【删除规则】
+1. 删除所有连续重复的无意义单词，例如堆叠的“ALT”（只保留第一个有上下文的，或全部删除）。
+2. 删除孤立的数字（如“5”“18”“93”“8,979”），除非它们明显是参数或列表项的一部分。
+3. 删除时间戳（如“下午2:25 · 2026年5月6日”）、查看数、点赞/转发计数、平台按钮文字（如“查看”“相关”）。
+4. 删除广告或无关引导（如“想发布自己的文章？升级为 Premium”）。
+5. 删除无意义的单个字符、表情符号（除非有语义）、重复的分隔线。；
+要求二：有英文内容的，在下面一段插入对应的中文翻译；
+要求三：重新整理排版内容，使得文字阅读性强，但是不能更改原文内容，特别是笔记里面提到的类似于“提示词”之类的绝对不能更改；
+要求四：把每个笔记的标题都改成能够体现对应笔记内容的标题。
+要求五：最后完成所有内容后，把文件名改成对应的内容的标题的名称。请你在这个Obsidian文件夹“C:\Users\你的用户名\OneDrive\Apps\remotely-save\Obsidian Vault”下完成工作，不要去其他文件夹。
+，并且只修改只有数字的.md文件，不要修改文件名含有中文的.md文件。
 ```
